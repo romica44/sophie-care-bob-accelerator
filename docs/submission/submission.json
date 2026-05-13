@@ -1,0 +1,24 @@
+{
+  "projectTitle": "SophieCare Bob Accelerator",
+  "shortDescription": "A Bob-powered workflow that accelerates building, documenting, testing, and understanding SophieCare, an AI surgical co-pilot prototype.",
+  "teamName": "SophieCare Labs",
+  "teamDescription": "AI engineers and healthcare innovators creating intelligent surgical copilots powered by multimodal AI.",
+  "demoApplicationPlatform": "Vercel",
+  "technologyTags": [
+    "IBM Bob",
+    "IBM",
+    "Developer Productivity",
+    "AI Development Tools",
+    "Codebase Understanding",
+    "Documentation Automation",
+    "Testing",
+    "Next.js",
+    "React",
+    "TypeScript",
+    "Tailwind CSS",
+    "Healthcare AI",
+    "Responsible AI"
+  ],
+  "coverImagePath": "public/cover-16x9.jpg",
+  "ibmBobReportPath": "docs/ibm-bob/exports/ibm-bob-exported-report.pdf"
+}

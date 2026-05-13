@@ -1,0 +1,36 @@
+{
+  "name": "sophiecare-bob-accelerator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IBM Bob-powered development accelerator for a healthcare AI surgical co-pilot prototype.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "latest",
+    "ai": "latest",
+    "clsx": "latest",
+    "lucide-react": "latest",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "recharts": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "postcss": "latest",
+    "tailwindcss": "latest",
+    "typescript": "latest"
+  }
+}
