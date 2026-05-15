@@ -129,29 +129,31 @@ export function Sidebar() {
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
+                    className={`group flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 ${
                       isActive
-                        ? "bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-300/30"
+                        ? "bg-gradient-to-r from-cyan-500 to-cyan-400 shadow-lg shadow-cyan-500/40"
                         : "text-white/70 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <Icon
-                      className={`h-5 w-5 transition-transform group-hover:scale-110 ${
-                        isActive ? "text-slate-950" : "text-cyan-300"
+                      className={`h-5 w-5 transition-all duration-300 group-hover:scale-110 ${
+                        isActive ? "text-white" : "text-cyan-300"
                       }`}
                     />
                     <div className="flex-1">
-                      <p className="font-semibold">{item.name}</p>
+                      <p className={`font-semibold transition-colors duration-300 ${
+                        isActive ? "text-white" : ""
+                      }`}>{item.name}</p>
                       <p
-                        className={`text-xs ${
-                          isActive ? "text-slate-950/60" : "text-white/40"
+                        className={`text-xs transition-colors duration-300 ${
+                          isActive ? "text-white/80" : "text-white/40"
                         }`}
                       >
                         {item.description}
                       </p>
                     </div>
                     {isActive && (
-                      <ChevronRight className="h-4 w-4 text-slate-950" />
+                      <ChevronRight className="h-4 w-4 text-white" />
                     )}
                   </Link>
                 );
