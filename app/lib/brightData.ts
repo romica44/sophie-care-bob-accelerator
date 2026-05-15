@@ -14,7 +14,7 @@ export async function searchWithBrightData(query: string): Promise<Source[]> {
     {
       title: `Bright Data SERP result for ${query}`,
       url: `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-      type: "news",
+      type: "other",
       signal: "Live public web search result"
     }
   ];

@@ -1,0 +1,385 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { Play, Pause, Square, Clock, Activity, AlertTriangle, CheckCircle2, TrendingUp, Eye, FileText } from "lucide-react";
+
+type SurgeryStatus = "idle" | "running" | "paused" | "completed";
+
+interface SurgeryPhase {
+  name: string;
+  duration: number; // seconds
+  confidence: number;
+  risk: "Low" | "Medium" | "High";
+  tip: string;
+  alerts: string[];
+  recommendations: string[];
+}
+
+interface EventLogEntry {
+  timestamp: string;
+  type: "phase" | "alert" | "recommendation" | "status";
+  message: string;
+  severity?: "info" | "warning" | "success";
+}
+
+const surgeryPhases: SurgeryPhase[] = [
+  {
+    name: "Incision",
+    duration: 135, // 2:15
+    confidence: 98,
+    risk: "Low",
+    tip: "Confirm wound architecture and stabilize the anterior chamber before capsulorhexis.",
+    alerts: ["Chamber depth optimal", "Incision architecture confirmed"],
+    recommendations: ["Maintain steady hand position", "Verify wound seal integrity"]
+  },
+  {
+    name: "Capsulorhexis",
+    duration: 222, // 3:42
+    confidence: 94,
+    risk: "Medium",
+    tip: "Maintain centered circular movement. Critical phase for resident training.",
+    alerts: ["Capsule tension within normal range", "Circular continuity maintained"],
+    recommendations: ["Keep consistent circular motion", "Monitor capsule edge carefully"]
+  },
+  {
+    name: "Phacoemulsification",
+    duration: 500, // 8:20
+    confidence: 91,
+    risk: "Medium",
+    tip: "Monitor ultrasound energy and chamber stability. Flag rising posterior capsule risk.",
+    alerts: ["Ultrasound power optimal", "Posterior capsule tension detected - monitoring"],
+    recommendations: ["Adjust phaco power as needed", "Maintain chamber stability"]
+  },
+  {
+    name: "IOL Implantation",
+    duration: 250, // 4:10
+    confidence: 96,
+    risk: "Low",
+    tip: "Validate lens orientation and confirm complete unfolding before final hydration.",
+    alerts: ["IOL positioning optimal", "Lens unfolding complete"],
+    recommendations: ["Verify lens centration", "Check haptic position"]
+  },
+  {
+    name: "Closure",
+    duration: 90, // 1:30
+    confidence: 99,
+    risk: "Low",
+    tip: "Check wound seal, pressure stability, and final safety checklist.",
+    alerts: ["Wound seal confirmed", "Intraocular pressure stable"],
+    recommendations: ["Final safety checklist complete", "Post-op instructions ready"]
+  }
+];
+
+export function LiveSurgery() {
+  const [status, setStatus] = useState<SurgeryStatus>("idle");
+  const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [phaseTime, setPhaseTime] = useState(0);
+  const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const currentPhase = surgeryPhases[currentPhaseIndex];
+  const totalDuration = surgeryPhases.reduce((sum, phase) => sum + phase.duration, 0);
+  const overallProgress = (elapsedTime / totalDuration) * 100;
+  const phaseProgress = (phaseTime / currentPhase.duration) * 100;
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const addLogEntry = (message: string, type: EventLogEntry["type"], severity: EventLogEntry["severity"] = "info") => {
+    const entry: EventLogEntry = {
+      timestamp: formatTime(elapsedTime),
+      type,
+      message,
+      severity
+    };
+    setEventLog((prev) => [entry, ...prev].slice(0, 20)); // Keep last 20 entries
+  };
+
+  const startSurgery = () => {
+    setStatus("running");
+    if (currentPhaseIndex === 0 && elapsedTime === 0) {
+      addLogEntry("Live surgery simulation started", "status", "success");
+      addLogEntry(`Phase 1: ${currentPhase.name} - ${currentPhase.tip}`, "phase", "info");
+    } else {
+      addLogEntry("Surgery resumed", "status", "success");
+    }
+  };
+
+  const pauseSurgery = () => {
+    setStatus("paused");
+    addLogEntry("Surgery paused", "status", "warning");
+  };
+
+  const stopSurgery = () => {
+    setStatus("completed");
+    addLogEntry("Surgery completed successfully", "status", "success");
+    addLogEntry(`Total duration: ${formatTime(elapsedTime)}`, "status", "info");
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+  };
+
+  const resetSurgery = () => {
+    setStatus("idle");
+    setCurrentPhaseIndex(0);
+    setElapsedTime(0);
+    setPhaseTime(0);
+    setEventLog([]);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+  };
+
+  // Timer effect
+  useEffect(() => {
+    if (status === "running") {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prev) => prev + 1);
+        setPhaseTime((prev) => {
+          const newPhaseTime = prev + 1;
+          
+          // Check if phase is complete
+          if (newPhaseTime >= currentPhase.duration) {
+            // Move to next phase
+            if (currentPhaseIndex < surgeryPhases.length - 1) {
+              const nextPhaseIndex = currentPhaseIndex + 1;
+              const nextPhase = surgeryPhases[nextPhaseIndex];
+              
+              addLogEntry(`Phase ${currentPhaseIndex + 1} completed: ${currentPhase.name}`, "phase", "success");
+              addLogEntry(`Phase ${nextPhaseIndex + 1} started: ${nextPhase.name}`, "phase", "info");
+              addLogEntry(nextPhase.tip, "recommendation", "info");
+              
+              setCurrentPhaseIndex(nextPhaseIndex);
+              return 0;
+            } else {
+              // Surgery complete
+              stopSurgery();
+              return prev;
+            }
+          }
+          
+          // Add periodic alerts and recommendations
+          if (newPhaseTime % 30 === 0 && newPhaseTime > 0) {
+            const alertIndex = Math.floor(newPhaseTime / 30) % currentPhase.alerts.length;
+            addLogEntry(currentPhase.alerts[alertIndex], "alert", "info");
+          }
+          
+          if (newPhaseTime % 45 === 0 && newPhaseTime > 0) {
+            const recIndex = Math.floor(newPhaseTime / 45) % currentPhase.recommendations.length;
+            addLogEntry(currentPhase.recommendations[recIndex], "recommendation", "info");
+          }
+          
+          return newPhaseTime;
+        });
+      }, 1000);
+
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
+    }
+  }, [status, currentPhaseIndex, currentPhase]);
+
+  const riskClasses = (risk: string) => {
+    if (risk === "Low") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-200";
+    if (risk === "Medium") return "border-amber-400/30 bg-amber-400/10 text-amber-200";
+    return "border-red-400/30 bg-red-400/10 text-red-200";
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Main Console */}
+      <div className="rounded-3xl border border-white/10 bg-black/35 p-6 shadow-2xl backdrop-blur">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <p className="font-bold">Live Surgical Console</p>
+            <p className="text-sm text-white/50">Real-time cataract surgery simulation</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`status-dot ${status === "running" ? "active" : "inactive"}`}></span>
+            <span className={`rounded-full border px-3 py-1 text-xs font-bold ${
+              status === "running" 
+                ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-200" 
+                : status === "paused"
+                ? "border-amber-400/40 bg-amber-400/10 text-amber-200"
+                : status === "completed"
+                ? "border-cyan-400/40 bg-cyan-400/10 text-cyan-200"
+                : "border-white/15 bg-white/10 text-white/60"
+            }`}>
+              {status.toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        {/* Visual Display */}
+        <div className="relative min-h-[330px] overflow-hidden rounded-[1.5rem] border border-white/10 bg-gradient-to-br from-slate-950 via-indigo-950 to-black p-5">
+          <div className="absolute inset-0 opacity-25" style={{ backgroundImage: "radial-gradient(circle at center, rgba(34,211,238,.8) 0 1px, transparent 2px)", backgroundSize: "26px 26px" }} />
+          <div className="relative flex h-full min-h-[290px] flex-col justify-between">
+            <div className="flex items-start justify-between gap-4">
+              <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-4 animate-bounce-subtle">
+                <Eye className="h-10 w-10 text-cyan-200" />
+              </div>
+              <div className="grid gap-3 text-right">
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4 glass">
+                  <p className="text-xs text-white/50">AI Confidence</p>
+                  <p className="text-3xl font-black text-cyan-200">{currentPhase.confidence}%</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4 glass">
+                  <p className="text-xs text-white/50">Elapsed Time</p>
+                  <p className="text-2xl font-black text-white">{formatTime(elapsedTime)}</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="mb-4 progress-bar">
+                <div className="progress-bar-fill" style={{ width: `${overallProgress}%` }} />
+              </div>
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <div className="rounded-2xl border border-white/10 bg-black/35 p-4 glass">
+                  <p className="text-xs uppercase tracking-[0.25em] text-white/40">Current Phase {currentPhaseIndex + 1}/{surgeryPhases.length}</p>
+                  <p className="mt-1 text-3xl font-black">{currentPhase.name}</p>
+                  <p className="mt-3 text-sm leading-relaxed text-white/65">{currentPhase.tip}</p>
+                  <div className="mt-3 progress-bar">
+                    <div className="progress-bar-fill" style={{ width: `${phaseProgress}%` }} />
+                  </div>
+                  <p className="mt-1 text-xs text-white/40">Phase progress: {Math.round(phaseProgress)}%</p>
+                </div>
+                <div className={`rounded-2xl border p-4 ${riskClasses(currentPhase.risk)}`}>
+                  <AlertTriangle className="mb-2 h-6 w-6" />
+                  <p className="text-xs uppercase tracking-[0.2em] opacity-70">Risk</p>
+                  <p className="text-2xl font-black">{currentPhase.risk}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="mt-4 flex flex-wrap gap-3">
+          {status === "idle" && (
+            <button onClick={startSurgery} className="btn-primary inline-flex items-center gap-2">
+              <Play className="h-4 w-4" /> Start Live Surgery
+            </button>
+          )}
+          {status === "running" && (
+            <button onClick={pauseSurgery} className="btn-primary inline-flex items-center gap-2">
+              <Pause className="h-4 w-4" /> Pause
+            </button>
+          )}
+          {status === "paused" && (
+            <button onClick={startSurgery} className="btn-primary inline-flex items-center gap-2">
+              <Play className="h-4 w-4" /> Resume
+            </button>
+          )}
+          {(status === "running" || status === "paused") && (
+            <button onClick={stopSurgery} className="btn-secondary inline-flex items-center gap-2">
+              <Square className="h-4 w-4" /> End Surgery
+            </button>
+          )}
+          {(status === "completed" || status === "paused") && (
+            <button onClick={resetSurgery} className="btn-secondary">
+              Reset
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Event Log */}
+      {eventLog.length > 0 && (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-6 animate-fade-in">
+          <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
+            <Activity className="h-5 w-5 text-cyan-300" />
+            Event Log
+          </h3>
+          <div className="max-h-[400px] space-y-2 overflow-y-auto pr-2">
+            {eventLog.map((entry, index) => (
+              <div
+                key={index}
+                className={`flex gap-3 rounded-2xl border p-3 text-sm transition-all hover:bg-white/5 ${
+                  entry.severity === "success"
+                    ? "border-emerald-400/20 bg-emerald-400/5"
+                    : entry.severity === "warning"
+                    ? "border-amber-400/20 bg-amber-400/5"
+                    : "border-white/10 bg-black/25"
+                }`}
+              >
+                <span className="shrink-0 font-mono text-xs text-white/40">{entry.timestamp}</span>
+                <div className="flex-1">
+                  <span className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider ${
+                    entry.type === "phase" ? "text-cyan-300" :
+                    entry.type === "alert" ? "text-amber-300" :
+                    entry.type === "recommendation" ? "text-violet-300" :
+                    "text-white/60"
+                  }`}>
+                    {entry.type === "phase" && <Activity className="h-3 w-3" />}
+                    {entry.type === "alert" && <AlertTriangle className="h-3 w-3" />}
+                    {entry.type === "recommendation" && <TrendingUp className="h-3 w-3" />}
+                    {entry.type === "status" && <CheckCircle2 className="h-3 w-3" />}
+                    {entry.type}
+                  </span>
+                  <p className="mt-1 text-white/70">{entry.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Procedure Summary */}
+      {status === "completed" && (
+        <div className="rounded-3xl border border-cyan-300/20 bg-cyan-300/5 p-6 animate-fade-in">
+          <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
+            <FileText className="h-5 w-5 text-cyan-300" />
+            Procedure Summary
+          </h3>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <Clock className="mb-2 h-6 w-6 text-cyan-300" />
+              <p className="text-xs text-white/50">Total Duration</p>
+              <p className="text-2xl font-black text-white">{formatTime(elapsedTime)}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <Activity className="mb-2 h-6 w-6 text-cyan-300" />
+              <p className="text-xs text-white/50">Phases Completed</p>
+              <p className="text-2xl font-black text-white">{surgeryPhases.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <TrendingUp className="mb-2 h-6 w-6 text-emerald-300" />
+              <p className="text-xs text-white/50">Avg Confidence</p>
+              <p className="text-2xl font-black text-emerald-300">
+                {Math.round(surgeryPhases.reduce((sum, p) => sum + p.confidence, 0) / surgeryPhases.length)}%
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+              <CheckCircle2 className="mb-2 h-6 w-6 text-emerald-300" />
+              <p className="text-xs text-white/50">Status</p>
+              <p className="text-2xl font-black text-emerald-300">Success</p>
+            </div>
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 p-4">
+            <h4 className="mb-3 font-bold">Phase Breakdown</h4>
+            <div className="space-y-2">
+              {surgeryPhases.map((phase, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <span className="text-white/70">{phase.name}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/50">{formatTime(phase.duration)}</span>
+                    <span className={`badge ${riskClasses(phase.risk)}`}>{phase.risk}</span>
+                    <span className="font-bold text-cyan-200">{phase.confidence}%</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Made with Bob
