@@ -242,8 +242,9 @@ app/
 └── api/                # API routes
 
 docs/
-├── ibm-bob/            # IBM Bob development evidence
+├── bob_sessions/       # IBM Bob development evidence
 │   └── exports/        # Task exports and documentation
+│   └── screenshots/    # Task screenshots
 ├── submission/         # Hackathon submission materials
 ├── architecture.md     # Technical architecture
 └── multi-page-app-guide.md # Development guide
