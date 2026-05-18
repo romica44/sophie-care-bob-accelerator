@@ -96,12 +96,13 @@ This platform was built with **IBM Bob** as an AI development partner, demonstra
 - **Testing Strategy** - Comprehensive test planning and implementation
 
 ### Evidence & Documentation
-All IBM Bob interactions are documented in `/docs/ibm-bob/exports/` with:
+All IBM Bob interactions are documented in `/docs/bob_sessions/` with:
 - Task breakdowns and planning sessions
 - Code generation workflows
 - Architecture decisions and rationale
 - Quality improvements and refactoring
 - Complete development timeline
+- Screenshots
 
 ### Workflow Benefits
 - **70% faster** initial prototype development
